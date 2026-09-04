@@ -472,6 +472,8 @@ DO i_band = 1, n_band
              ! via the Maxwell-Garnet mixing approach, otherwise use
              ! volume-weighting for BC also.
              !
+             ! Probably remove this call and put calculations inside nested
+             ! do loop
             CALL ukca_radaer_ri_calc(                                          &
                  ! From the structure ukca_radaer for UKCA/radiation interaction
                  nmodes, ncp_max, ncp_max_x_nmodes,                            &
@@ -493,7 +495,8 @@ DO i_band = 1, n_band
                  i_ukca_radaer_prescribe_ssa,                                  &
                  ! Output refractive index real and imag parts
                  re_m(i_intg), im_m(i_intg) )
-
+             ! Probably remove this call and put calculations inside nested
+             ! do loop
           END DO  ! i_intg
 
           ! This whole bit "ukca_radaer_get_lut_index" depends on user settings
