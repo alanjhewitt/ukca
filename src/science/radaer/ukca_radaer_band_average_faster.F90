@@ -38,6 +38,8 @@ IMPLICIT NONE
 !
 ! Local variables
 !
+INTEGER, PARAMETER :: one = 1
+
 
 INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
 INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -158,3 +160,99 @@ IF ( l_sustrat ) THEN
   END DO ! i_mode
 
 END IF
+
+re_m( i_prof, i_layr, i_band, i_mode ) = 0.0
+im_m( i_prof, i_layr, i_band, i_mode ) = 0.0
+
+! If single scattering albedo is prescribed, calculate both the real and
+! imagniary components of refractive index
+IF ( i_ukca_radaer_prescribe_ssa == do_not_prescribe ) THEN
+
+  DO i_mode = 1, n_ukca_mode
+    DO i_band = 1, n_band
+      DO i_layr = 1, n_layer
+        DO i_prof = 1, n_profile
+          DO i_cmpt = 1, n_cpnt_in_mode(i_mode)
+
+            ! Sum up refractive index, weighting by component volume
+            re_m( i_prof, i_layr, i_band, i_mode ) =                           &
+                 re_m( i_prof, i_layr, i_band, i_mode ) +                      &
+                 ( ukca_cpnt_volume( i_cmpt, i_prof, i_layr ) *                &
+                   precalc%realrefr( i_cmpt, one, i_band, isolir ) )
+
+            ! Sum up refractive index, weighting by component volume
+            im_m(i_prof,i_layr,i_band,i_mode) =                                &
+                 im_m(i_prof,i_layr,i_band,i_mode) +                           &
+                 ( ukca_cpnt_volume( i_cmpt, i_prof, i_layr ) *                &
+                 precalc%imagrefr( i_cmpt, one, i_band, isolir ) )
+
+          END DO ! i_cmpt
+        END DO ! i_prof
+      END DO ! i_layr
+    END DO ! i_band
+  END DO ! i_mode
+
+  DO i_mode = 1, n_ukca_mode
+    IF ( l_soluble(i_mode) ) THEN
+      DO i_band = 1, n_band
+        DO i_layr = 1, n_layer
+          DO i_prof = 1, n_profile
+
+            ! Account for refractive index of water
+            re_m(i_prof,i_layr,i_band,i_mode) =                                &
+                    re_m(i_prof,i_layr,i_band,i_mode) +                        &
+                    ( ukca_water_volume( i_prof, i_layr, i_mode ) *            &
+                      precalc%realrefr(ip_ukca_water, one, i_band, isolir ) )
+
+          END DO ! i_prof
+        END DO ! i_layr
+      END DO ! i_band
+    END IF ! l_soluble(i_mode)
+  END DO ! i_mode
+
+ELSE
+! If single scattering albedo is not prescribed, calculate only the real
+! component of refractive index
+
+  DO i_mode = 1, n_ukca_mode
+    DO i_band = 1, n_band
+      DO i_layr = 1, n_layer
+        DO i_prof = 1, n_profile
+          DO i_cmpt = 1, n_cpnt_in_mode(i_mode)
+
+            ! Sum up refractive index, weighting by component volume
+            re_m( i_prof, i_layr, i_band, i_mode ) =                           &
+                 re_m( i_prof, i_layr, i_band, i_mode ) +                      &
+                 ( ukca_cpnt_volume( i_cmpt, i_prof, i_layr ) *                &
+                   precalc%realrefr( i_cmpt, one, i_band, isolir ) )
+
+          END DO ! i_cmpt
+        END DO ! i_prof
+      END DO ! i_layr
+    END DO ! i_band
+  END DO ! i_mode
+
+  DO i_mode = 1, n_ukca_mode
+    IF ( l_soluble(i_mode) ) THEN
+      DO i_band = 1, n_band
+        DO i_layr = 1, n_layer
+          DO i_prof = 1, n_profile
+
+            ! Account for refractive index of water
+            re_m(i_prof,i_layr,i_band,i_mode) =                                &
+                    re_m(i_prof,i_layr,i_band,i_mode) +                        &
+                    ( ukca_water_volume( i_prof, i_layr, i_mode ) *            &
+                      precalc%realrefr(ip_ukca_water, one, i_band, isolir ) )
+
+            im_m(i_prof,i_layr,i_band,i_mode) =                                &
+                    im_m(i_prof,i_layr,i_band,i_mode) +                        &
+                    ( ukca_water_volume( i_prof, i_layr, i_mode ) * &
+                      precalc%imagrefr(ip_ukca_water, one, i_band, isolir ) )
+
+          END DO ! i_prof
+        END DO ! i_layr
+      END DO ! i_band
+    END IF ! l_soluble(i_mode)
+  END DO ! i_mode
+ 
+END IF       
